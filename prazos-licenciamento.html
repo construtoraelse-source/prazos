@@ -1,0 +1,573 @@
+<title>Prazos de Licenciamento</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: prancha técnica — faixa de resumo no topo, lista de processos ordenada por prazo, painel lateral para editar */
+:root {
+  --bg: #eef0f1;
+  --surface: #ffffff;
+  --ink: #17202a;
+  --muted: #5d6b78;
+  --line: #d3d9de;
+  --accent: #1d5a86;
+  --accent-soft: #e2edf5;
+  --late: #b42318;   --late-soft: #fde8e6;
+  --soon: #b25e09;   --soon-soft: #fdf0dc;
+  --warn: #8a6d00;   --warn-soft: #faf4d6;
+  --ok: #217a4b;     --ok-soft: #e1f3e8;
+  --none: #7a8794;   --none-soft: #eceff1;
+  --shadow: 0 1px 2px rgba(23,32,42,.06), 0 8px 28px rgba(23,32,42,.10);
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12171c; --surface: #1a2128; --ink: #e6ebef; --muted: #93a1ad; --line: #2c3640;
+  --accent: #6aaee0; --accent-soft: #1d3346;
+  --late: #f2786c; --late-soft: #3a1d1b; --soon: #f0a54d; --soon-soft: #3a2a14;
+  --warn: #dcc157; --warn-soft: #332d12; --ok: #5cc28b; --ok-soft: #173325;
+  --none: #8996a2; --none-soft: #242c34;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.45);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #12171c; --surface: #1a2128; --ink: #e6ebef; --muted: #93a1ad; --line: #2c3640;
+  --accent: #6aaee0; --accent-soft: #1d3346;
+  --late: #f2786c; --late-soft: #3a1d1b; --soon: #f0a54d; --soon-soft: #3a2a14;
+  --warn: #dcc157; --warn-soft: #332d12; --ok: #5cc28b; --ok-soft: #173325;
+  --none: #8996a2; --none-soft: #242c34;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.45);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-stretch: 78%; font-weight: 800; font-size: clamp(30px, 5vw, 42px); line-height: 1; margin: 6px 0 0; letter-spacing: -.01em; text-wrap: balance; }
+.top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 9px 14px; border-radius: 6px; font-weight: 500; font-size: 14px; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--late); }
+.btn.danger.armed { background: var(--late); color: var(--surface); border-color: var(--late); }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+/* resumo */
+.summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 18px; }
+.sum { border: 0; border-right: 1px solid var(--line); background: transparent; text-align: left; padding: 14px 16px 12px; display: grid; gap: 2px; position: relative; }
+.sum:last-child { border-right: 0; }
+.sum::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--c); }
+.sum .n { font-family: var(--f-display); font-stretch: 80%; font-weight: 700; font-size: 32px; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--c); }
+.sum .l { font-size: 13px; color: var(--muted); }
+.sum[aria-pressed="true"] { background: var(--cs); }
+.sum:hover { background: var(--cs); }
+
+/* filtros */
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.filters input[type=search], .filters select { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: 14px; min-width: 0; }
+.filters input[type=search] { flex: 1 1 220px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 8px 12px; font-size: 14px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.chipclear { border: 0; background: none; color: var(--accent); font-size: 14px; text-decoration: underline; padding: 4px; }
+
+/* lista */
+.group-h { display: flex; align-items: baseline; gap: 10px; margin: 22px 0 8px; }
+.group-h h2 { font-family: var(--f-display); font-stretch: 85%; font-weight: 700; font-size: 19px; margin: 0; }
+.group-h .meta { font-size: 13px; color: var(--muted); font-family: var(--f-mono); }
+.list { display: grid; gap: 8px; }
+.row { display: grid; grid-template-columns: 6px 92px minmax(0, 1fr) auto; align-items: stretch; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; cursor: pointer; text-align: left; padding: 0; width: 100%; }
+.row:hover { border-color: var(--muted); }
+.stripe { background: var(--c); }
+.days { display: grid; align-content: center; justify-items: center; padding: 10px 6px; background: var(--cs); color: var(--c); }
+.days .d { font-family: var(--f-display); font-stretch: 80%; font-weight: 800; font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
+.days .u { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-family: var(--f-mono); margin-top: 3px; }
+.main { padding: 11px 14px; min-width: 0; display: grid; gap: 4px; }
+.t { font-weight: 600; font-size: 15.5px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.sub { font-size: 13.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.sub .mono { font-family: var(--f-mono); font-size: 12.5px; }
+.side { display: grid; align-content: center; justify-items: end; gap: 6px; padding: 10px 14px; text-align: right; }
+.date { font-family: var(--f-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--none-soft); color: var(--muted); white-space: nowrap; }
+.pill.st-exigencia { background: var(--soon-soft); color: var(--soon); }
+.pill.st-aprovado, .pill.st-concluido { background: var(--ok-soft); color: var(--ok); }
+.pill.st-indeferido { background: var(--late-soft); color: var(--late); }
+.pill.st-em_analise, .pill.st-protocolado, .pill.st-em_execucao { background: var(--accent-soft); color: var(--accent); }
+.ord { font-family: var(--f-mono); font-size: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-variant-numeric: tabular-nums; }
+.tag-ex { font-size: 11px; font-family: var(--f-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; padding: 0 5px; font-weight: 500; }
+
+.u-late { --c: var(--late); --cs: var(--late-soft); }
+.u-soon { --c: var(--soon); --cs: var(--soon-soft); }
+.u-warn { --c: var(--warn); --cs: var(--warn-soft); }
+.u-ok   { --c: var(--ok);   --cs: var(--ok-soft); }
+.u-none { --c: var(--none); --cs: var(--none-soft); }
+
+.state { background: var(--surface); border: 1px dashed var(--line); border-radius: 8px; padding: 28px 22px; text-align: center; color: var(--muted); display: grid; gap: 12px; justify-items: center; }
+.state strong { color: var(--ink); font-size: 16px; }
+.note { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.banner { font-size: 13.5px; padding: 9px 12px; border-radius: 6px; background: var(--warn-soft); color: var(--warn); margin-bottom: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin-top: 22px; }
+.legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--c); margin-right: 6px; vertical-align: -1px; }
+
+/* painel */
+.scrim { position: fixed; inset: 0; background: rgba(10,15,20,.45); z-index: 20; }
+.panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(480px, 100%); background: var(--surface); z-index: 21; box-shadow: var(--shadow); display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); }
+.panel-h { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.panel-h h3 { margin: 0; font-family: var(--f-display); font-stretch: 85%; font-size: 21px; font-weight: 700; }
+.x { border: 0; background: none; font-size: 24px; line-height: 1; padding: 4px 8px; color: var(--muted); }
+form.f { overflow-y: auto; padding: 18px 20px; display: grid; gap: 14px; flex: 1; align-content: start; }
+.fld { display: grid; gap: 5px; min-width: 0; }
+.fld label { font-size: 12.5px; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+.fld input, .fld select, .fld textarea { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 9px 10px; width: 100%; min-width: 0; }
+.fld textarea { min-height: 84px; resize: vertical; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.three { display: grid; grid-template-columns: 1.2fr .8fr 1.2fr; gap: 12px; }
+.hint { font-size: 12.5px; color: var(--muted); }
+.panel-f { display: flex; gap: 8px; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.panel-f .r { display: flex; gap: 8px; }
+.err { color: var(--late); font-size: 13.5px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 6px; font-size: 14px; z-index: 30; box-shadow: var(--shadow); }
+
+@media (max-width: 760px) {
+  .summary { grid-template-columns: repeat(3, 1fr); }
+  .sum:nth-child(3) { border-right: 0; }
+  .sum:nth-child(n+4) { border-top: 1px solid var(--line); }
+  .row { grid-template-columns: 5px 74px minmax(0, 1fr); }
+  .side { grid-column: 3; justify-items: start; text-align: left; padding: 0 14px 11px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .days .d { font-size: 22px; }
+}
+@media (max-width: 420px) { .two, .three { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: no-preference) { .row, .sum, .btn { transition: border-color .15s, background-color .15s; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow" id="hoje">Hoje</div>
+      <h1>Prazos de Licenciamento</h1>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="btnCsv" type="button" hidden>Exportar CSV</button>
+      <button class="btn primary" id="btnNovo" type="button">+ Novo processo</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <section class="summary" id="summary" aria-label="Resumo por situação do prazo"></section>
+
+  <div class="filters">
+    <input type="search" id="q" placeholder="Buscar obra, licença, órgão, protocolo…" aria-label="Buscar">
+    <select id="fObra" aria-label="Filtrar por obra"><option value="">Todas as obras</option></select>    <select id="fStatus" aria-label="Filtrar por andamento">
+      <option value="">Todo andamento</option>
+      <option value="ativos">Só em aberto</option>
+    </select>
+    <div class="seg" role="group" aria-label="Agrupar">
+      <button type="button" id="vPrazo" aria-pressed="true">Por prazo</button>
+      <button type="button" id="vObra" aria-pressed="false">Por obra</button>
+    </div>
+    <button type="button" class="chipclear" id="limpar" hidden>Limpar filtros</button>
+  </div>
+
+  <div id="out"></div>
+
+  <div class="legend">
+    <span class="u-late">Vencido</span>
+    <span class="u-soon">Vence em até 15 dias</span>
+    <span class="u-warn">16 a 45 dias</span>
+    <span class="u-ok">Mais de 45 dias</span>
+    <span class="u-none">Sem prazo, concluído ou encerrado</span>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="panel" id="panel" hidden role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+  <div class="panel-h">
+    <h3 id="panelTitle">Novo processo</h3>
+    <button class="x" type="button" id="fechar" aria-label="Fechar">×</button>
+  </div>
+  <form class="f" id="form" novalidate>
+    <div class="fld">
+      <label for="obra">Obra *</label>
+      <input id="obra" list="dlObras" required placeholder="Ex.: Residencial Vila Nova — Torre B">
+      <datalist id="dlObras"></datalist>
+    </div>
+    <div class="fld">
+      <label for="tipo">Licença / documento *</label>
+      <input id="tipo" list="dlTipos" required placeholder="Ex.: Alvará de Construção">
+      <datalist id="dlTipos"></datalist>
+    </div>
+    <div class="two">
+      <div class="fld">
+        <label for="ordem">Nº de ordem</label>
+        <input id="ordem" type="number" min="1" step="1" inputmode="numeric" placeholder="Ex.: 6">
+      </div>
+      <div class="fld">
+        <label for="fase">Fase</label>
+        <select id="fase">
+          <option value="Licenciamento">Licenciamento</option>
+          <option value="Execução">Execução</option>
+          <option value="Vendas">Vendas</option>
+        </select>
+      </div>
+    </div>
+    <div class="two">
+      <div class="fld">
+        <label for="orgao">Órgão</label>
+        <input id="orgao" list="dlOrgaos" placeholder="Ex.: Prefeitura / SMU">
+        <datalist id="dlOrgaos"></datalist>
+      </div>
+      <div class="fld">
+        <label for="protocolo">Nº do processo / protocolo</label>
+        <input id="protocolo" placeholder="Ex.: 2026/014.553">
+      </div>
+    </div>
+    <div class="fld">
+      <label for="status">Andamento</label>
+      <select id="status"></select>
+    </div>
+    <div class="three">
+      <div class="fld">
+        <label for="dataProtocolo">Início</label>
+        <input id="dataProtocolo" type="date">
+      </div>
+      <div class="fld">
+        <label for="duracao">Duração (dias)</label>
+        <input id="duracao" type="number" min="0" step="1" inputmode="numeric" placeholder="Ex.: 30">
+      </div>
+      <div class="fld">
+        <label for="vencimento">Término</label>
+        <input id="vencimento" type="date">
+      </div>
+    </div>
+    <div class="hint">Término = início + duração, em dias corridos, calculado automaticamente. Se mudar o término, a duração se ajusta. Sem data de início, informe direto o término.</div>
+    <div class="fld">
+      <label for="responsavel">Responsável</label>
+      <input id="responsavel" list="dlResp" placeholder="Quem acompanha este processo">
+      <datalist id="dlResp"></datalist>
+    </div>
+    <div class="fld">
+      <label for="notas">Observações</label>
+      <textarea id="notas" placeholder="Exigências, contatos no órgão, documentos pendentes…"></textarea>
+    </div>
+    <div class="err" id="formErr" hidden></div>
+  </form>
+  <div class="panel-f">
+    <button class="btn danger" type="button" id="btnExcluir" hidden>Excluir</button>
+    <span></span>
+    <div class="r">
+      <button class="btn" type="button" id="btnCancelar">Cancelar</button>
+      <button class="btn primary" type="button" id="btnSalvar">Salvar</button>
+    </div>
+  </div>
+</aside>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  const STATUS = [
+    ["em_preparo", "Em preparo"],
+    ["protocolado", "Protocolado"],
+    ["em_analise", "Em análise"],
+    ["em_execucao", "Em execução"],
+    ["exigencia", "Com exigência"],
+    ["aprovado", "Aprovado / vigente"],
+    ["concluido", "Concluído"],
+    ["indeferido", "Indeferido"],
+    ["encerrado", "Encerrado / arquivado"],
+  ];
+  const STATUS_LABEL = Object.fromEntries(STATUS);
+  const CLOSED = new Set(["indeferido", "encerrado", "concluido"]);
+  const TIPOS = ["Consulta prévia / Certidão de uso do solo", "Aprovação de projeto arquitetônico", "Alvará de Construção", "Alvará de Demolição", "Licença de Terraplenagem", "Licença Ambiental Prévia (LP)", "Licença de Instalação (LI)", "Licença de Operação (LO)", "Autorização de supressão vegetal", "Outorga de uso da água", "Estudo de Impacto de Vizinhança (EIV)", "Projeto de prevenção contra incêndio (PPCI)", "AVCB / Certificado do Corpo de Bombeiros", "ART / RRT", "Aprovação concessionária (água/esgoto)", "Aprovação concessionária (energia)", "Habite-se / Certificado de Conclusão", "CND de obra (INSS)", "Matrícula CNO"];
+  const ORGAOS = ["Prefeitura Municipal", "Secretaria de Urbanismo", "Secretaria de Meio Ambiente", "Órgão ambiental estadual", "Corpo de Bombeiros", "CREA", "CAU", "Concessionária de água", "Concessionária de energia", "Receita Federal", "Cartório de Registro de Imóveis"];
+
+  const $ = (id) => document.getElementById(id);
+  const faseOf = (r) => r.fase || "Licenciamento";
+  const S = { rows: [], loaded: false, db: null, canWrite: true, bucket: "", obra: "", status: "", q: "", view: "prazo", editing: null };
+  try { const v = localStorage.getItem("pl-view"); if (v === "obra" || v === "prazo") S.view = v; } catch (e) {}
+
+  // ---------- datas ----------
+  const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+  const parse = (s) => { if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null; const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+  const fmt = (s) => { const d = parse(s); return d ? d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"; };
+  const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const addDays = (s, n) => { const d = parse(s); if (!d) return ""; d.setDate(d.getDate() + n); return iso(d); };
+  const diffDays = (a, b) => { const x = parse(a), y = parse(b); return x && y ? Math.round((y - x) / 86400000) : null; };
+  const daysLeft = (s) => { const d = parse(s); return d ? Math.round((d - today()) / 86400000) : null; };
+  function urgency(r) {
+    if (CLOSED.has(r.status)) return "none";
+    const n = daysLeft(r.vencimento);
+    if (n === null) return "none";
+    if (n < 0) return "late";
+    if (n <= 15) return "soon";
+    if (n <= 45) return "warn";
+    return "ok";
+  }
+  const BUCKETS = [["late", "Vencidos"], ["soon", "Até 15 dias"], ["warn", "16 a 45 dias"], ["ok", "Em dia"], ["none", "Sem prazo / encerrados"]];
+  $("hoje").textContent = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  // ---------- render ----------
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  function filtered() {
+    const q = S.q.trim().toLowerCase();
+    return S.rows.filter((r) => {
+      if (S.bucket && urgency(r) !== S.bucket) return false;
+      if (S.obra && r.obra !== S.obra) return false;      if (S.status === "ativos" && (CLOSED.has(r.status) || r.status === "aprovado")) return false;
+      if (S.status && S.status !== "ativos" && r.status !== S.status) return false;
+      if (q) { const hay = [r.obra, r.tipo, r.orgao, r.protocolo, r.responsavel, r.notas].join(" ").toLowerCase(); if (!hay.includes(q)) return false; }
+      return true;
+    });
+  }
+  const order = { late: 0, soon: 1, warn: 2, ok: 3, none: 4 };
+  function sortRows(a, b) {
+    const ua = order[urgency(a)], ub = order[urgency(b)];
+    if (ua !== ub) return ua - ub;
+    const da = daysLeft(a.vencimento), dbb = daysLeft(b.vencimento);
+    if (da !== null && dbb !== null && da !== dbb) return da - dbb;
+    return (a.obra || "").localeCompare(b.obra || "", "pt-BR");
+  }
+
+  function renderSummary() {
+    const box = $("summary"); box.textContent = "";
+    const counts = { late: 0, soon: 0, warn: 0, ok: 0, none: 0 };
+    S.rows.forEach((r) => counts[urgency(r)]++);
+    BUCKETS.forEach(([k, label]) => {
+      const b = el("button", "sum u-" + k); b.type = "button";
+      b.setAttribute("aria-pressed", String(S.bucket === k));
+      b.append(el("span", "n", S.loaded ? String(counts[k]) : "–"), el("span", "l", label));
+      b.onclick = () => { S.bucket = S.bucket === k ? "" : k; render(); };
+      box.append(b);
+    });
+  }
+
+  function renderRow(r) {
+    const u = urgency(r), n = daysLeft(r.vencimento);
+    const row = el("button", "row u-" + u); row.type = "button";
+    row.setAttribute("aria-label", `${r.tipo} — ${r.obra}. Abrir para editar`);
+    row.append(el("span", "stripe"));
+    const days = el("span", "days");
+    if (r.status === "concluido") { days.append(el("span", "d", "✓"), el("span", "u", "concluído")); }
+    else if (CLOSED.has(r.status)) { days.append(el("span", "d", "—"), el("span", "u", "encerrado")); }
+    else if (n === null) { days.append(el("span", "d", "—"), el("span", "u", "sem prazo")); }
+    else if (n === 0) { days.append(el("span", "d", "HOJE"), el("span", "u", "vence")); }
+    else if (n < 0) { days.append(el("span", "d", String(-n)), el("span", "u", -n === 1 ? "dia atraso" : "dias atraso")); }
+    else { days.append(el("span", "d", String(n)), el("span", "u", n === 1 ? "dia" : "dias")); }
+    row.append(days);
+
+    const main = el("span", "main");
+    const t = el("span", "t");
+    if (r.ordem) { const o = el("span", "ord", String(r.ordem).padStart(2, "0")); o.title = "Nº de ordem da etapa"; t.append(o); }
+    t.append(el("span", null, r.tipo || "Sem tipo"));
+    if (r.exemplo) t.append(el("span", "tag-ex", "exemplo"));
+    main.append(t);
+    const sub = el("span", "sub");
+    if (S.view !== "obra") sub.append(el("span", null, r.obra));
+    if (faseOf(r) !== "Licenciamento") sub.append(el("span", null, faseOf(r)));
+    if (r.orgao) sub.append(el("span", null, r.orgao));
+    if (r.protocolo) sub.append(el("span", "mono", "Proc. " + r.protocolo));
+    if (r.dataProtocolo) sub.append(el("span", "mono", "Início " + fmt(r.dataProtocolo) + (r.duracao != null && r.duracao !== "" ? " · " + r.duracao + (Number(r.duracao) === 1 ? " dia" : " dias") : "")));
+    if (r.responsavel) sub.append(el("span", null, "Resp.: " + r.responsavel));
+    main.append(sub);
+    row.append(main);
+
+    const side = el("span", "side");
+    side.append(el("span", "pill st-" + (r.status || "em_preparo"), STATUS_LABEL[r.status] || "Em preparo"));
+    side.append(el("span", "date", r.vencimento ? "Término " + fmt(r.vencimento) : ""));
+    row.append(side);
+    row.onclick = () => openPanel(r);
+    return row;
+  }
+
+  function renderList() {
+    const out = $("out"); out.textContent = "";
+    if (!S.loaded) { const s = el("div", "state"); s.append(el("strong", null, "Carregando processos…")); out.append(s); return; }
+    if (!S.rows.length) {
+      const s = el("div", "state");
+      s.append(el("strong", null, "Nenhum processo cadastrado"),
+        el("span", null, "Cadastre cada licença de cada obra com o prazo dela. A lista se ordena sozinha pelo que vence primeiro."));
+      if (S.canWrite) { const b = el("button", "btn primary", "+ Cadastrar o primeiro processo"); b.type = "button"; b.onclick = () => openPanel(null); s.append(b); }
+      out.append(s); return;
+    }
+    const rows = filtered().sort(sortRows);
+    if (!rows.length) { const s = el("div", "state"); s.append(el("strong", null, "Nada com esses filtros"), el("span", null, "Ajuste a busca ou clique em Limpar filtros.")); out.append(s); return; }
+
+    if (S.view === "obra") {
+      const groups = new Map();
+      rows.forEach((r) => { const k = r.obra || "Sem obra"; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
+      // obras com pendência mais urgente primeiro
+      [...groups.entries()].sort((a, b) => sortRows(a[1][0], b[1][0])).forEach(([obra, list]) => {
+        const h = el("div", "group-h"); h.append(el("h2", null, obra));
+        const late = list.filter((r) => urgency(r) === "late").length, soon = list.filter((r) => urgency(r) === "soon").length;
+        let meta = list.length + (list.length === 1 ? " processo" : " processos");
+        if (late) meta += ` · ${late} vencido${late > 1 ? "s" : ""}`;
+        if (soon) meta += ` · ${soon} em até 15 dias`;
+        h.append(el("span", "meta", meta));
+        // dentro de cada obra, segue a sequência das etapas (nº de ordem)
+        const seq = list.slice().sort((a, b) => (a.ordem || 999) - (b.ordem || 999) || sortRows(a, b));
+        const l = el("div", "list"); seq.forEach((r) => l.append(renderRow(r)));
+        out.append(h, l);
+      });
+    } else {
+      const l = el("div", "list"); rows.forEach((r) => l.append(renderRow(r))); out.append(l);
+    }
+    if (S.rows.some((r) => r.exemplo) && S.canWrite) {
+      const p = el("div", "note"); p.append("Os itens marcados como exemplo servem só para mostrar o funcionamento. ");
+      const b = el("button", "chipclear", "Remover exemplos"); b.type = "button"; b.onclick = removeExamples; p.append(b); out.append(p);
+    }
+  }
+
+  function renderFilters() {
+    const obras = [...new Set(S.rows.map((r) => r.obra).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    const sel = $("fObra"), cur = S.obra;
+    sel.textContent = ""; sel.append(new Option("Todas as obras", ""));
+    obras.forEach((o) => sel.append(new Option(o, o)));
+    if (cur && !obras.includes(cur)) S.obra = "";
+    sel.value = S.obra;
+    const fs = $("fStatus");
+    if (fs.options.length < 3) STATUS.forEach(([v, l]) => fs.append(new Option(l, v)));
+    fs.value = S.status;
+    $("vPrazo").setAttribute("aria-pressed", String(S.view === "prazo"));
+    $("vObra").setAttribute("aria-pressed", String(S.view === "obra"));
+    $("limpar").hidden = !(S.bucket || S.obra || S.status || S.q);
+    fill("dlObras", obras);
+    fill("dlTipos", [...new Set([...TIPOS, ...S.rows.map((r) => r.tipo).filter(Boolean)])]);
+    fill("dlOrgaos", [...new Set([...ORGAOS, ...S.rows.map((r) => r.orgao).filter(Boolean)])]);
+    fill("dlResp", [...new Set(S.rows.map((r) => r.responsavel).filter(Boolean))]);
+  }
+  function fill(id, arr) { const d = $(id); d.textContent = ""; arr.forEach((v) => { const o = document.createElement("option"); o.value = v; d.append(o); }); }
+
+  function render() {
+    renderSummary(); renderFilters(); renderList();
+    $("btnNovo").hidden = !S.canWrite;
+  }
+
+  // ---------- painel ----------
+  STATUS.forEach(([v, l]) => $("status").append(new Option(l, v)));
+  // sequência da coluna A do "cronograma da burocracia"
+  const ORDEM = { "Escritura": 1, "Desmembramento": 2, "Certidão de uso e ocupação do solo": 3, "Projeto arquitetônico": 4, "ART": 5, "Alvará de Construção": 6, "Dispensa de licença ambiental": 7, "Viabilidade CAERN": 8, "Pedido de ligação de água": 9, "Pedido de energia da obra": 10, "Projetos de engenharia": 11, "Aprovação do Corpo de Bombeiros": 12, "Aprovação do projeto pela COSERN": 13, "Extensão da iluminação pública": 14, "Extensão da rede da CAERN": 15, "Obra (pedreiros)": 16, "SCPO": 17, "Gesso": 18, "Cerâmica": 19, "Bancadas": 20, "Pintura": 21, "Tomadas e interruptores": 22, "Habite-se": 23, "Vistoria dos Bombeiros (AVCB)": 24, "Inspeção e ligação do quadro de energia do condomínio": 25, "Viabilidade CAERN definitiva": 26, "Averbação": 27, "Instituição de condomínio e matrículas": 28, "Cadastro das casas novas na tributação": 29, "Iniciar as vendas": 30, "Laudos": 31, "Assinatura na Caixa": 32 };
+  const FIELDS = ["obra", "tipo", "ordem", "fase", "orgao", "protocolo", "status", "dataProtocolo", "duracao", "vencimento", "responsavel", "notas"];
+  let lastFocus = null;
+  function openPanel(r) {
+    lastFocus = document.activeElement;
+    S.editing = r ? r.id : null;
+    $("panelTitle").textContent = r ? (S.canWrite ? "Editar processo" : "Detalhes do processo") : "Novo processo";
+    FIELDS.forEach((f) => { $(f).value = r ? (r[f] ?? "") : ""; $(f).disabled = !S.canWrite; });
+    $("fase").value = r ? faseOf(r) : "Licenciamento";
+    if (!r) { $("status").value = "em_preparo"; if (S.obra) $("obra").value = S.obra; }
+    $("formErr").hidden = true;
+    $("btnExcluir").hidden = !r || !S.canWrite; disarm();
+    $("btnSalvar").hidden = !S.canWrite;
+    $("panel").hidden = false; $("scrim").hidden = false;
+    setTimeout(() => $(S.canWrite ? "obra" : "fechar").focus(), 30);
+  }
+  function closePanel() { $("panel").hidden = true; $("scrim").hidden = true; S.editing = null; if (lastFocus) try { lastFocus.focus(); } catch (e) {} }
+  let armTimer = null;
+  function disarm() { const b = $("btnExcluir"); b.classList.remove("armed"); b.textContent = "Excluir"; clearTimeout(armTimer); }
+
+  function showErr(msg) { const e = $("formErr"); e.textContent = msg; e.hidden = false; }
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => (t.hidden = true), 2600); }
+
+  let saving = false;
+  async function save() {
+    if (saving) return;
+    const v = {}; FIELDS.forEach((f) => (v[f] = $(f).value.trim()));
+    if (!v.obra) return showErr("Informe a obra.");
+    if (!v.tipo) return showErr("Informe a licença ou documento.");
+    if (!S.db) return showErr("Não foi possível salvar: o armazenamento não está disponível nesta visualização.");
+    if (v.duracao === "") delete v.duracao;
+    else { const n = parseInt(v.duracao, 10); if (!(n >= 0)) return showErr("A duração deve ser um número inteiro de dias (0 ou mais)."); v.duracao = n; if (v.dataProtocolo) v.vencimento = addDays(v.dataProtocolo, n); }
+    if (v.dataProtocolo && v.vencimento && diffDays(v.dataProtocolo, v.vencimento) < 0) return showErr("O término não pode ser antes do início.");
+    if (v.ordem === "") delete v.ordem;
+    else { const n = parseInt(v.ordem, 10); if (!(n > 0)) return showErr("O nº de ordem deve ser um número inteiro maior que zero."); v.ordem = n; }
+    v.atualizadoEm = new Date().toISOString();
+    const prev = S.editing ? S.rows.find((r) => r.id === S.editing) : null;
+    if (prev && prev.exemplo) v.exemplo = true;
+    saving = true; $("btnSalvar").disabled = true;
+    try {
+      const col = S.db.collection("licencas");
+      if (S.editing) await col.doc(S.editing).set(v);
+      else { v.criadoEm = v.atualizadoEm; await col.doc().set(v); }
+      closePanel(); toast(prev ? "Processo atualizado" : "Processo cadastrado");
+    } catch (e) {
+      if (e && e.code === "invalid_argument") { S.canWrite = false; render(); showErr("Você tem acesso só de leitura a este gestor."); }
+      else if (e && e.code === "quota_exceeded") showErr("O limite de registros foi atingido. Exclua processos encerrados para liberar espaço.");
+      else showErr("Não foi possível salvar agora. Verifique a conexão e tente de novo.");
+    } finally { saving = false; $("btnSalvar").disabled = false; }
+  }
+  async function del() {
+    const b = $("btnExcluir");
+    if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Confirmar exclusão"; armTimer = setTimeout(disarm, 4000); return; }
+    try { await S.db.collection("licencas").doc(S.editing).delete(); closePanel(); toast("Processo excluído"); }
+    catch (e) { showErr("Não foi possível excluir agora."); }
+  }
+  async function removeExamples() {
+    if (!S.db) return;
+    const ex = S.rows.filter((r) => r.exemplo);
+    try { for (const r of ex) await S.db.collection("licencas").doc(r.id).delete(); toast("Exemplos removidos"); }
+    catch (e) { toast("Não foi possível remover todos os exemplos."); }
+  }
+
+  // ---------- CSV ----------
+  async function exportCsv() {
+    const dl = await claude.use("downloads"); if (!dl) return;
+    const head = ["Obra", "Nº ordem", "Licença/etapa", "Fase", "Órgão", "Protocolo", "Andamento", "Início", "Duração (dias)", "Término", "Dias restantes", "Responsável", "Observações"];
+    const q = (s) => '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"';
+    const lines = [head.map(q).join(";")].concat(filtered().sort(sortRows).map((r) => [r.obra, r.ordem || "", r.tipo, faseOf(r), r.orgao, r.protocolo, STATUS_LABEL[r.status] || "", fmt(r.dataProtocolo), r.duracao ?? "", fmt(r.vencimento), CLOSED.has(r.status) ? "" : (daysLeft(r.vencimento) ?? ""), r.responsavel, r.notas].map(q).join(";")));
+    const d = new Date(); const stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+    try { await dl.save({ filename: `prazos-licenciamento-${stamp}.csv`, data: "﻿" + lines.join("\r\n") }); } catch (e) {}
+  }
+
+  // ---------- eventos ----------
+  $("btnNovo").onclick = () => openPanel(null);
+  $("fechar").onclick = closePanel; $("btnCancelar").onclick = closePanel; $("scrim").onclick = closePanel;
+  $("btnSalvar").onclick = save; $("btnExcluir").onclick = del;
+  // término = início + duração; mudar o término com início preenchido recalcula a duração
+  const calcTermino = () => { const i = $("dataProtocolo").value, n = parseInt($("duracao").value, 10); if (i && n >= 0) $("vencimento").value = addDays(i, n); };
+  $("dataProtocolo").addEventListener("input", calcTermino);
+  $("duracao").addEventListener("input", calcTermino);
+  $("vencimento").addEventListener("input", () => { const i = $("dataProtocolo").value, t = $("vencimento").value; const d = diffDays(i, t); if (d !== null && d >= 0) $("duracao").value = d; });
+  $("tipo").addEventListener("change", () => { const n = ORDEM[$("tipo").value.trim()]; if (n && !$("ordem").value) $("ordem").value = n; });
+  $("form").addEventListener("submit", (e) => { e.preventDefault(); save(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("panel").hidden) closePanel(); });
+  let qT; $("q").addEventListener("input", (e) => { clearTimeout(qT); qT = setTimeout(() => { S.q = e.target.value; render(); }, 120); });
+  $("fObra").onchange = (e) => { S.obra = e.target.value; render(); };  $("fStatus").onchange = (e) => { S.status = e.target.value; render(); };
+  const setView = (v) => { S.view = v; try { localStorage.setItem("pl-view", v); } catch (e) {} render(); };
+  $("vPrazo").onclick = () => setView("prazo"); $("vObra").onclick = () => setView("obra");
+  $("limpar").onclick = () => { S.bucket = ""; S.obra = ""; S.status = ""; S.q = ""; $("q").value = ""; render(); };
+  $("btnCsv").onclick = exportCsv;
+
+  render();
+
+  // ---------- dados ----------
+  function banner(msg) { const b = $("banner"); if (!msg) { b.hidden = true; return; } b.textContent = msg; b.hidden = false; }
+  (async () => {
+    if (!window.claude || !claude.use) { S.loaded = true; S.canWrite = false; banner("Abra este gestor pelo link do Claude para ver e salvar os processos."); render(); return; }
+    const [db, user, dl] = await Promise.all([claude.use("db"), claude.use("user"), claude.use("downloads")]);
+    if (dl) $("btnCsv").hidden = false;
+    if (user) { try { const w = await user.can("data.write"); if (w === false) S.canWrite = false; } catch (e) {} }
+    if (!db) { S.loaded = true; S.canWrite = false; banner("Entre na sua conta Claude para ver e salvar os processos."); render(); return; }
+    S.db = db;
+    const timer = setTimeout(() => banner(S.loaded ? "Sem conexão com o armazenamento: os dados podem estar desatualizados." : "Ainda não foi possível carregar os processos. Verifique a conexão."), 10000);
+    db.collection("licencas").onSnapshot((snap) => {
+      S.rows = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+      S.loaded = true;
+      if (!snap.metadata.fromCache) { clearTimeout(timer); banner(""); }
+      render();
+    }, (err) => {
+      clearTimeout(timer); S.loaded = true;
+      banner(err && err.code === "revoked" ? "Seu acesso a este gestor mudou." : "Não foi possível carregar os processos. Recarregue a página.");
+      render();
+    });
+  })();
+})();
+</script>
