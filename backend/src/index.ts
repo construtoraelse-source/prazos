@@ -1,15 +1,5 @@
-import express from "express";
-import cors from "cors";
+import app from "./app.js";
 import { config } from "./config.js";
-import { requireAuth } from "./auth.js";
-import { licencasRouter } from "./licencas.js";
-
-const app = express();
-app.use(cors({ origin: config.corsOrigin }));
-app.use(express.json({ limit: "1mb" }));
-
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
-app.use("/api", requireAuth, licencasRouter);
 
 app.listen(config.port, () => {
   console.log(`API rodando em http://localhost:${config.port}`);
